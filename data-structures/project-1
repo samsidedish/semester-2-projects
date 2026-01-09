@@ -1,0 +1,223 @@
+#include <stdio.h>
+#include <time.h>
+
+#define MAX 50
+
+typedef struct {
+    int pid;
+    char name[30];
+    int priority;
+    int burstTime;
+} Process;
+
+Process table[MAX];
+int size = 0;
+
+/* Utility */
+int pidExists(int pid) {
+    for (int i = 0; i < size; i++)
+        if (table[i].pid == pid)
+            return 1;
+    return 0;
+}
+
+/* Add Process */
+void addProcess() {
+    if (size == MAX) {
+        printf("Process table overflow.\n");
+        return;
+    }
+
+    int pid;
+    printf("Enter PID: ");
+    scanf("%d", &pid);
+
+    if (pidExists(pid)) {
+        printf("PID already exists.\n");
+        return;
+    }
+
+    table[size].pid = pid;
+
+    printf("Enter Process Name: ");
+    scanf("%s", table[size].name);
+
+    printf("Enter Priority: ");
+    scanf("%d", &table[size].priority);
+
+    printf("Enter Burst Time: ");
+    scanf("%d", &table[size].burstTime);
+
+    size++;
+    printf("Process inserted successfully.\n");
+}
+
+/* Display */
+void displayTable() {
+    if (size == 0) {
+        printf("No processes available.\n");
+        return;
+    }
+
+    printf("\nPID\tNAME\tPRIORITY\tBURST\n");
+    for (int i = 0; i < size; i++)
+        printf("%d\t%s\t%d\t\t%d\n",
+               table[i].pid,
+               table[i].name,
+               table[i].priority,
+               table[i].burstTime);
+}
+
+/* Bubble Sort by Priority */
+void sortByPriority() {
+    int comp = 0, swap = 0;
+    clock_t start = clock();
+
+    for (int i = 0; i < size - 1; i++) {
+        for (int j = 0; j < size - i - 1; j++) {
+            comp++;
+            if (table[j].priority > table[j + 1].priority) {
+                Process t = table[j];
+                table[j] = table[j + 1];
+                table[j + 1] = t;
+                swap++;
+            }
+        }
+    }
+
+    clock_t end = clock();
+    printf("Sorted by Priority\nComparisons: %d | Swaps: %d | Time: %.6f sec\n",
+           comp, swap, (double)(end - start) / CLOCKS_PER_SEC);
+}
+
+/* Insertion Sort by PID */
+void sortByPID() {
+    int comp = 0, shift = 0;
+    clock_t start = clock();
+
+    for (int i = 1; i < size; i++) {
+        Process key = table[i];
+        int j = i - 1;
+
+        while (j >= 0 && table[j].pid > key.pid) {
+            comp++;
+            table[j + 1] = table[j];
+            shift++;
+            j--;
+        }
+        table[j + 1] = key;
+    }
+
+    clock_t end = clock();
+    printf("Sorted by PID\nComparisons: %d | Shifts: %d | Time: %.6f sec\n",
+           comp, shift, (double)(end - start) / CLOCKS_PER_SEC);
+}
+
+/* Shell Sort by Burst Time */
+void sortByBurstTime() {
+    int comp = 0, move = 0;
+    clock_t start = clock();
+
+    for (int gap = size / 2; gap > 0; gap /= 2) {
+        for (int i = gap; i < size; i++) {
+            Process temp = table[i];
+            int j;
+            for (j = i; j >= gap && table[j - gap].burstTime > temp.burstTime; j -= gap) {
+                comp++;
+                table[j] = table[j - gap];
+                move++;
+            }
+            table[j] = temp;
+        }
+    }
+
+    clock_t end = clock();
+    printf("Sorted by Burst Time\nComparisons: %d | Moves: %d | Time: %.6f sec\n",
+           comp, move, (double)(end - start) / CLOCKS_PER_SEC);
+}
+
+/* Linear Search */
+void linearSearchPID() {
+    int pid, comp = 0;
+    printf("Enter PID to search: ");
+    scanf("%d", &pid);
+
+    clock_t start = clock();
+    for (int i = 0; i < size; i++) {
+        comp++;
+        if (table[i].pid == pid) {
+            clock_t end = clock();
+            printf("Found: %s\nComparisons: %d | Time: %.6f sec\n",
+                   table[i].name, comp,
+                   (double)(end - start) / CLOCKS_PER_SEC);
+            return;
+        }
+    }
+
+    clock_t end = clock();
+    printf("Not Found\nComparisons: %d | Time: %.6f sec\n",
+           comp, (double)(end - start) / CLOCKS_PER_SEC);
+}
+
+/* Binary Search (Requires PID sort first) */
+void binarySearchPID() {
+    int pid, low = 0, high = size - 1, mid, comp = 0;
+
+    printf("NOTE: PID must be sorted before binary search.\n");
+    printf("Enter PID to search: ");
+    scanf("%d", &pid);
+
+    clock_t start = clock();
+    while (low <= high) {
+        mid = (low + high) / 2;
+        comp++;
+
+        if (table[mid].pid == pid) {
+            clock_t end = clock();
+            printf("Found: %s\nComparisons: %d | Time: %.6f sec\n",
+                   table[mid].name, comp,
+                   (double)(end - start) / CLOCKS_PER_SEC);
+            return;
+        } else if (table[mid].pid < pid)
+            low = mid + 1;
+        else
+            high = mid - 1;
+    }
+
+    clock_t end = clock();
+    printf("Not Found\nComparisons: %d | Time: %.6f sec\n",
+           comp, (double)(end - start) / CLOCKS_PER_SEC);
+}
+
+/* Main Menu */
+int main() {
+    int choice;
+
+    do {
+        printf("\n--- PROCESS TABLE SIMULATOR ---\n");
+        printf("1. Add Process\n");
+        printf("2. Display Table\n");
+        printf("3. Sort by Priority (Bubble)\n");
+        printf("4. Sort by PID (Insertion)\n");
+        printf("5. Sort by Burst Time (Shell)\n");
+        printf("6. Linear Search (PID)\n");
+        printf("7. Binary Search (PID)\n");
+        printf("0. Exit\n");
+        printf("Choice: ");
+        scanf("%d", &choice);
+
+        switch (choice) {
+            case 1: addProcess(); break;
+            case 2: displayTable(); break;
+            case 3: sortByPriority(); break;
+            case 4: sortByPID(); break;
+            case 5: sortByBurstTime(); break;
+            case 6: linearSearchPID(); break;
+            case 7: binarySearchPID(); break;
+            case 0: printf("Program terminated.\n"); break;
+            default: printf("Invalid option.\n");
+        }
+    } while (choice != 0);
+
+    return 0;
+}
